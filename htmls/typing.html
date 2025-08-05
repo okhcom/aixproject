@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한올 정보 타자 연습 앱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .highlight-correct {
+            color: #1d4ed8; /* blue-700 */
+        }
+        .highlight-incorrect {
+            color: #c2410c; /* orange-700 */
+            text-decoration: underline;
+            text-decoration-color: #fb923c; /* orange-400 */
+        }
+        #userInput:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #60a5fa; /* blue-400 */
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        /* 스크롤바 스타일 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9; /* slate-100 */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* slate-300 */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; /* slate-400 */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-rose-100 via-purple-100 to-sky-100 flex items-center justify-center min-h-screen">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl w-full">
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 md:p-10">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800">한올 정보 타자 연습</h1>
+                <p class="text-slate-500 mt-2">중학교 정보 교과 내용으로 타자 실력을 향상시켜 보세요.</p>
+            </header>
+
+            <!-- 시작 화면 -->
+            <div id="startScreen">
+                <div class="flex flex-col sm:flex-row justify-center gap-4 mb-6">
+                    <button id="koreanBtn" class="w-full sm:w-auto px-6 py-3 bg-sky-500 text-white font-bold rounded-lg shadow-md hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-opacity-50 transition-all transform hover:scale-105">한글 연습 시작</button>
+                    <button id="englishBtn" class="w-full sm:w-auto px-6 py-3 bg-indigo-500 text-white font-bold rounded-lg shadow-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-50 transition-all transform hover:scale-105">영문 연습 시작</button>
+                </div>
+                 <div class="text-center">
+                    <button id="showHistoryBtn" class="px-6 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50 transition">기록 보기</button>
+                </div>
+            </div>
+
+            <main id="typingArea" class="hidden">
+                <!-- 상단 정보 (타이머) -->
+                <div class="flex justify-end items-center mb-2">
+                    <div id="timer" class="text-lg font-bold text-slate-600 bg-white/50 px-4 py-1 rounded-full">
+                        연습 시간: <span id="timeDisplay" class="font-mono">00:00</span>
+                    </div>
+                </div>
+                
+                <!-- 문제 문장 -->
+                <div class="bg-slate-100 p-4 rounded-lg text-xl md:text-2xl leading-relaxed text-slate-700 mb-4 h-28 overflow-y-auto" id="sentenceDisplay"></div>
+                
+                <!-- 사용자 입력창 -->
+                <textarea id="userInput" class="w-full p-4 border-2 border-slate-300 rounded-lg text-xl md:text-2xl leading-relaxed focus:border-blue-400 transition duration-200" rows="3" placeholder="이곳에 문장을 입력하세요..."></textarea>
+                
+                <!-- 결과 및 다음 버튼 -->
+                <div class="flex flex-col md:flex-row items-center justify-between mt-6">
+                    <div id="result" class="text-lg font-bold text-slate-800 mb-4 md:mb-0 flex flex-wrap gap-x-2">
+                        <span>타수: <span id="cpm" class="text-sky-600">0</span></span>
+                        <span class="hidden md:inline">|</span>
+                        <span>정확도: <span id="accuracy" class="text-sky-600">0</span>%</span>
+                        <span class="hidden md:inline">|</span>
+                        <span>연습 문장: <span id="sentenceCount" class="text-sky-600">0</span></span>
+                    </div>
+                    <button id="nextBtn" class="w-full md:w-auto px-8 py-3 bg-teal-500 text-white font-bold rounded-lg shadow-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-50 transition-transform transform hover:scale-105">다음 문장</button>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button id="endGameBtn" class="px-6 py-2 bg-rose-500 text-white font-semibold rounded-lg shadow-md hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-opacity-50 transition">오늘 연습 끝내기</button>
+                </div>
+            </main>
+        </div>
+        <footer class="text-center mt-6 text-slate-500 text-sm">
+            <p>Gemini가 제작한 타자 연습 앱</p>
+        </footer>
+    </div>
+
+    <!-- 결과 요약 모달 -->
+    <div id="resultsModal" class="fixed inset-0 flex items-center justify-center modal-backdrop hidden z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 m-4 max-w-md w-full text-center transform transition-all scale-95 opacity-0" id="modalContent">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">오늘의 연습 결과</h2>
+            <div class="space-y-3 text-left bg-slate-50 p-6 rounded-lg">
+                <p class="text-lg"><strong>총 연습 문장:</strong> <span id="finalSentences" class="font-mono text-blue-700"></span>개</p>
+                <p class="text-lg"><strong>최고 타수:</strong> <span id="highestCpm" class="font-mono text-green-600"></span></p>
+                <p class="text-lg"><strong>최저 타수:</strong> <span id="lowestCpm" class="font-mono text-red-600"></span></p>
+                <p class="text-lg"><strong>평균 타수:</strong> <span id="averageCpm" class="font-mono text-purple-700"></span></p>
+            </div>
+            <button id="closeResultsBtn" class="mt-6 w-full px-6 py-3 bg-sky-500 text-white font-bold rounded-lg shadow-md hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400">새로 시작하기</button>
+        </div>
+    </div>
+
+    <!-- 기록 보기 모달 -->
+    <div id="historyModal" class="fixed inset-0 flex items-center justify-center modal-backdrop hidden z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 m-4 max-w-2xl w-full flex flex-col transform transition-all scale-95 opacity-0" id="historyModalContent">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4 text-center">연습 기록</h2>
+            <div class="flex-grow bg-slate-50 p-4 rounded-lg overflow-y-auto custom-scrollbar" style="max-height: 60vh;">
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-200 sticky top-0">
+                        <tr>
+                            <th scope="col" class="px-4 py-3">날짜</th>
+                            <th scope="col" class="px-4 py-3">언어</th>
+                            <th scope="col" class="px-4 py-3">문장 수</th>
+                            <th scope="col" class="px-4 py-3">최고타수</th>
+                            <th scope="col" class="px-4 py-3">평균타수</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- 기록이 여기에 동적으로 추가됩니다. -->
+                    </tbody>
+                </table>
+                <p id="noHistoryMessage" class="text-center text-slate-500 py-8 hidden">저장된 기록이 없습니다.</p>
+            </div>
+            <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                <button id="clearHistoryBtn" class="w-full sm:w-auto flex-1 px-6 py-3 bg-rose-500 text-white font-bold rounded-lg shadow-md hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400">기록 전체 삭제</button>
+                <button id="closeHistoryBtn" class="w-full sm:w-auto flex-1 px-6 py-3 bg-slate-500 text-white font-bold rounded-lg shadow-md hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400">닫기</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- 데이터: 중학교 정보 교과 관련 문장 (생략) ---
+        const koreanSentences = ["정보는 실생활의 문제를 해결하는 데 유용하게 활용될 수 있는 의미 있는 자료입니다.", "알고리즘은 어떤 문제를 해결하기 위한 절차나 방법을 순서대로 나열한 것입니다.", "프로그래밍 언어는 컴퓨터에게 명령을 내리기 위해 사용하는 약속된 형태의 언어입니다.", "변수는 프로그램이 실행되는 동안 값을 저장하기 위해 사용하는 메모리 공간입니다.", "조건문은 특정 조건이 참일 때와 거짓일 때 서로 다른 명령을 실행하도록 합니다.", "반복문은 특정 조건이 만족하는 동안 동일한 명령을 여러 번 실행할 때 사용됩니다.", "피지컬 컴퓨팅은 컴퓨터와 현실 세계가 상호작용할 수 있도록 만드는 활동입니다.", "센서는 빛, 소리, 온도 등 외부 환경의 변화를 감지하는 장치입니다.", "액추에이터는 컴퓨터의 명령에 따라 움직이거나 소리를 내는 등 실제 동작을 수행합니다.", "데이터는 관찰이나 측정을 통해 얻은 사실이나 값으로, 정보의 원재료가 됩니다.", "정보 사회는 정보가 사회의 중심이 되어 높은 가치를 창출하는 사회를 의미합니다.", "디지털 정보는 0과 1의 조합으로 모든 자료를 표현하며 컴퓨터에서 처리됩니다.", "비트는 컴퓨터가 정보를 표현하는 가장 작은 단위로, 0 또는 1의 값을 가집니다.", "바이트는 8개의 비트로 구성되며, 영문자나 숫자 하나를 표현할 수 있습니다.", "순서도는 알고리즘을 이해하기 쉽도록 약속된 기호를 사용하여 그림으로 나타낸 것입니다.", "컴퓨팅 사고력은 복잡한 문제를 컴퓨터처럼 논리적이고 효율적으로 해결하는 능력입니다.", "인공지능은 인간의 학습 능력, 추론 능력, 지각 능력을 컴퓨터로 구현하는 기술입니다.", "머신러닝은 컴퓨터가 데이터를 통해 스스로 학습하고 예측하는 인공지능의 한 분야입니다.", "빅데이터는 기존의 방법으로 처리하기 어려운 매우 크고 복잡한 데이터의 집합입니다.", "데이터 시각화는 수치적인 데이터를 차트나 그래프 등으로 표현하여 이해를 돕습니다."];
+        const englishSentences = ["Information is meaningful data that can be usefully applied to solve real-life problems.", "An algorithm is a step-by-step procedure or method for solving a problem.", "A programming language is a formal language used to give instructions to a computer.", "A variable is a memory location used to store a value while a program is running.", "A conditional statement executes different commands depending on whether a condition is true or false.", "A loop is used to execute the same command multiple times while a certain condition is met.", "Physical computing is the activity of creating interactions between a computer and the real world.", "A sensor is a device that detects changes in the external environment, such as light, sound, or temperature.", "An actuator performs physical actions, like moving or making sounds, based on computer commands.", "Data is facts or values obtained through observation or measurement, serving as the raw material for information.", "An information society is a society where information is central and creates high value.", "Digital information represents all data as a combination of 0s and 1s for computer processing.", "A bit is the smallest unit of information a computer can process, having a value of either 0 or 1.", "A byte consists of 8 bits and can represent a single character, such as a letter or a number.", "A flowchart is a diagram that uses standardized symbols to visually represent an algorithm.", "Computational thinking is the ability to solve complex problems logically and efficiently like a computer.", "Artificial intelligence is technology that implements human abilities like learning, reasoning, and perception on computers.", "Machine learning is a field of AI where computers learn and make predictions from data on their own.", "Big data refers to extremely large and complex datasets that are difficult to process with traditional methods.", "Data visualization helps understanding by representing numerical data in charts or graphs."];
+
+        // --- DOM 요소 선택 ---
+        const startScreen = document.getElementById('startScreen');
+        const koreanBtn = document.getElementById('koreanBtn');
+        const englishBtn = document.getElementById('englishBtn');
+        const typingArea = document.getElementById('typingArea');
+        const sentenceDisplay = document.getElementById('sentenceDisplay');
+        const userInput = document.getElementById('userInput');
+        const nextBtn = document.getElementById('nextBtn');
+        const cpmDisplay = document.getElementById('cpm');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const sentenceCountDisplay = document.getElementById('sentenceCount');
+        const endGameBtn = document.getElementById('endGameBtn');
+        const timeDisplay = document.getElementById('timeDisplay');
+        
+        // 모달 관련 DOM 요소
+        const resultsModal = document.getElementById('resultsModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeResultsBtn = document.getElementById('closeResultsBtn');
+        const finalSentences = document.getElementById('finalSentences');
+        const highestCpm = document.getElementById('highestCpm');
+        const lowestCpm = document.getElementById('lowestCpm');
+        const averageCpm = document.getElementById('averageCpm');
+
+        // 기록 보기 관련 DOM 요소
+        const showHistoryBtn = document.getElementById('showHistoryBtn');
+        const historyModal = document.getElementById('historyModal');
+        const historyModalContent = document.getElementById('historyModalContent');
+        const historyTableBody = document.getElementById('historyTableBody');
+        const noHistoryMessage = document.getElementById('noHistoryMessage');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+
+
+        // --- 상태 변수 ---
+        let currentSentences = [];
+        let currentSentence = '';
+        let currentLanguage = '';
+        let startTime;
+        let singleSentenceTimerInterval;
+        let practiceTimerInterval;
+        let totalPracticeTime = 0;
+        let sentenceCompleted = false;
+        let sentencesPracticed = 0;
+        let cpmHistory = [];
+
+        // --- 이벤트 리스너 ---
+        koreanBtn.addEventListener('click', () => setupGame('korean'));
+        englishBtn.addEventListener('click', () => setupGame('english'));
+        userInput.addEventListener('input', handleInput);
+        nextBtn.addEventListener('click', loadNextSentence);
+        document.addEventListener('keydown', handleSpacebar);
+        endGameBtn.addEventListener('click', showFinalResults);
+        closeResultsBtn.addEventListener('click', closeFinalResults);
+        showHistoryBtn.addEventListener('click', showHistory);
+        closeHistoryBtn.addEventListener('click', closeHistory);
+        clearHistoryBtn.addEventListener('click', clearHistory);
+
+        // --- 함수 ---
+
+        /** 게임 환경 설정 */
+        function setupGame(language) {
+            currentLanguage = language;
+            currentSentences = (language === 'korean') ? koreanSentences : englishSentences;
+            
+            startScreen.classList.add('hidden');
+            typingArea.classList.remove('hidden');
+
+            // 연습 기록 및 시간 초기화
+            sentencesPracticed = 0;
+            cpmHistory = [];
+            sentenceCountDisplay.textContent = '0';
+            totalPracticeTime = 0;
+            timeDisplay.textContent = '00:00';
+            
+            // 전체 연습 타이머 시작
+            clearInterval(practiceTimerInterval);
+            practiceTimerInterval = setInterval(updatePracticeTimer, 1000);
+            
+            loadNextSentence();
+        }
+
+        /** 전체 연습 시간 타이머 업데이트 */
+        function updatePracticeTimer() {
+            totalPracticeTime++;
+            const minutes = Math.floor(totalPracticeTime / 60).toString().padStart(2, '0');
+            const seconds = (totalPracticeTime % 60).toString().padStart(2, '0');
+            timeDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        /** 다음 문장 불러오기 */
+        function loadNextSentence() {
+            if (currentSentences.length === 0) return;
+            const randomIndex = Math.floor(Math.random() * currentSentences.length);
+            currentSentence = currentSentences[randomIndex];
+            sentenceDisplay.innerHTML = currentSentence;
+            resetState();
+        }
+
+        /** 상태 초기화 */
+        function resetState() {
+            userInput.value = '';
+            userInput.disabled = false;
+            userInput.focus();
+            
+            clearInterval(singleSentenceTimerInterval);
+            startTime = null;
+            sentenceCompleted = false;
+
+            cpmDisplay.textContent = '0';
+            accuracyDisplay.textContent = '0';
+            nextBtn.classList.add('bg-teal-500', 'hover:bg-teal-600');
+            nextBtn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+            nextBtn.textContent = '다음 문장';
+        }
+
+        /** 스페이스바로 다음 문장 넘기기 */
+        function handleSpacebar(e) {
+            if (sentenceCompleted && e.code === 'Space') {
+                e.preventDefault();
+                loadNextSentence();
+            }
+        }
+
+        /** 사용자 입력 처리 */
+        function handleInput() {
+            if (sentenceCompleted) return;
+
+            if (!startTime) {
+                startTime = new Date();
+                // 개별 문장 타수 측정을 위한 타이머
+                singleSentenceTimerInterval = setInterval(updateStats, 1000);
+            }
+
+            const typedText = userInput.value;
+            const targetText = currentSentence;
+            let highlightedText = '';
+            
+            for (let i = 0; i < targetText.length; i++) {
+                if (i < typedText.length) {
+                    highlightedText += `<span class="${typedText[i] === targetText[i] ? 'highlight-correct' : 'highlight-incorrect'}">${targetText[i]}</span>`;
+                } else {
+                    highlightedText += `<span>${targetText[i]}</span>`;
+                }
+            }
+            sentenceDisplay.innerHTML = highlightedText;
+
+            updateStats();
+
+            // 문장 완성 시
+            if (typedText.length >= targetText.length) {
+                clearInterval(singleSentenceTimerInterval);
+                sentenceCompleted = true;
+                userInput.disabled = true;
+                
+                const finalCpm = calculateCpm();
+                cpmHistory.push(finalCpm);
+                sentencesPracticed++;
+                sentenceCountDisplay.textContent = sentencesPracticed;
+                
+                nextBtn.classList.remove('bg-teal-500', 'hover:bg-teal-600');
+                nextBtn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+                nextBtn.textContent = '완료! 다음 도전 (Space)';
+            }
+        }
+        
+        /** CPM 계산 로직 분리 */
+        function calculateCpm() {
+            if (!startTime) return 0;
+            const elapsedTime = (new Date() - startTime) / 1000;
+            const typedText = userInput.value;
+            if (elapsedTime === 0) return 0;
+
+            let cpm;
+            if (currentLanguage === 'korean') {
+                cpm = (typedText.length / elapsedTime) * 60;
+            } else {
+                cpm = ((typedText.length / 5) / elapsedTime) * 60;
+            }
+            return Math.round(cpm);
+        }
+
+        /** 타수 및 정확도 업데이트 */
+        function updateStats() {
+            cpmDisplay.textContent = calculateCpm();
+
+            const typedText = userInput.value;
+            let correctChars = 0;
+            for (let i = 0; i < typedText.length; i++) {
+                if (typedText[i] === currentSentence[i]) {
+                    correctChars++;
+                }
+            }
+            const accuracy = typedText.length > 0 ? (correctChars / typedText.length) * 100 : 0;
+            accuracyDisplay.textContent = Math.round(accuracy);
+        }
+
+        /** 최종 결과 표시 */
+        function showFinalResults() {
+            clearInterval(practiceTimerInterval); // 전체 연습 타이머 중지
+            if (cpmHistory.length === 0) {
+                alert("아직 연습한 문장이 없습니다. 한 문장 이상 완료 후 결과를 확인해 주세요.");
+                return;
+            }
+            
+            const total = cpmHistory.length;
+            const highest = Math.max(...cpmHistory);
+            const lowest = Math.min(...cpmHistory);
+            const average = Math.round(cpmHistory.reduce((a, b) => a + b, 0) / total);
+
+            finalSentences.textContent = total;
+            highestCpm.textContent = highest;
+            lowestCpm.textContent = lowest;
+            averageCpm.textContent = average;
+
+            saveResult({ total, highest, lowest, average });
+
+            resultsModal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        /** 결과 모달 닫기 및 초기화 */
+        function closeFinalResults() {
+            modalContent.classList.add('scale-95', 'opacity-0');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            
+            setTimeout(() => {
+                resultsModal.classList.add('hidden');
+                typingArea.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+            }, 200);
+        }
+
+        /** 결과 저장 */
+        function saveResult(result) {
+            const history = JSON.parse(localStorage.getItem('typingHistory')) || [];
+            const newRecord = {
+                date: new Date().toLocaleDateString('ko-KR'),
+                language: currentLanguage === 'korean' ? '한글' : '영문',
+                totalSentences: result.total,
+                highestCpm: result.highest,
+                averageCpm: result.average
+            };
+            history.push(newRecord);
+            localStorage.setItem('typingHistory', JSON.stringify(history));
+        }
+
+        /** 기록 보기 모달 열기 */
+        function showHistory() {
+            const history = JSON.parse(localStorage.getItem('typingHistory')) || [];
+            historyTableBody.innerHTML = '';
+
+            if (history.length === 0) {
+                noHistoryMessage.classList.remove('hidden');
+            } else {
+                noHistoryMessage.classList.add('hidden');
+                // 최신 기록이 위로 오도록 정렬
+                history.reverse().forEach(record => {
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b hover:bg-slate-50';
+                    row.innerHTML = `
+                        <td class="px-4 py-3">${record.date}</td>
+                        <td class="px-4 py-3">${record.language}</td>
+                        <td class="px-4 py-3">${record.totalSentences}</td>
+                        <td class="px-4 py-3 text-green-600 font-semibold">${record.highestCpm}</td>
+                        <td class="px-4 py-3 text-purple-700 font-semibold">${record.averageCpm}</td>
+                    `;
+                    historyTableBody.appendChild(row);
+                });
+            }
+
+            historyModal.classList.remove('hidden');
+            setTimeout(() => {
+                historyModalContent.classList.remove('scale-95', 'opacity-0');
+                historyModalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        /** 기록 보기 모달 닫기 */
+        function closeHistory() {
+            historyModalContent.classList.add('scale-95', 'opacity-0');
+            historyModalContent.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => {
+                historyModal.classList.add('hidden');
+            }, 200);
+        }
+
+        /** 기록 전체 삭제 */
+        function clearHistory() {
+            if (confirm('정말로 모든 연습 기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                localStorage.removeItem('typingHistory');
+                historyTableBody.innerHTML = '';
+                noHistoryMessage.classList.remove('hidden');
+            }
+        }
+
+    </script>
+</body>
+</html>
