@@ -31,6 +31,14 @@ with col1:
             f.close()
         htmlviewer.html(html1,height=800,scrolling=True)
 
+    with st.expander('SubContent4...'):
+        st.subheader('Html Content...')
+        import streamlit.components.v1 as htmlviewer
+        with open('./htmls/index2.html','r',encoding='utf-8') as f:
+            html2=f.read()
+            f.close()
+        htmlviewer.html(html2,height=800,scrolling=True)
+
     with st.expander('SubContent...'):
         st.subheader('data App Content...')
         st.table(df)
