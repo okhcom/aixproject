@@ -10,4 +10,4 @@ with open('./htmls/typing.html', 'r', encoding='utf-8') as f:
     html1 = f.read()
     f.close()
 
-htmlviewer.html(html1, height=800, scrolling=True)
+htmlviewer.html(html1, height=1200, scrolling=True)
